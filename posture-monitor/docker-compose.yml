@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  # MySQL database
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: posture_monitor
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Python FastAPI backend
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+
+  # Python microservice
+  python-service:
+    build: ./python-service
+    ports:
+      - "5000:5000"
+
+  # React frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
